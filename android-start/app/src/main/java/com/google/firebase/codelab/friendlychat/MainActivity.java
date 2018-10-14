@@ -15,10 +15,13 @@
  */
 package com.google.firebase.codelab.friendlychat;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -38,6 +41,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -57,6 +61,12 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.ar.core.Frame;
+import com.google.ar.core.Plane;
+import com.google.ar.sceneform.FrameTime;
+import com.google.ar.sceneform.rendering.Color;
+import com.google.ar.sceneform.rendering.PlaneRenderer;
+import com.google.ar.sceneform.ux.ArFragment;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -76,6 +86,10 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import org.w3c.dom.Text;
+
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,6 +102,8 @@ public class MainActivity extends AppCompatActivity
     private DatabaseReference mFirebaseDatabaseReference;
     private FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>
             mFirebaseAdapter;
+    private ArFragment arFragment;
+    private TextView textViewToChange;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseUser mFirebaseUser;
     private FirebaseRemoteConfig mFirebaseRemoteConfig;
@@ -340,6 +356,7 @@ public class MainActivity extends AppCompatActivity
                 startActivityForResult(intent, REQUEST_IMAGE);
             }
         });
+        setupAR();
     }
 
     @Override
@@ -522,6 +539,88 @@ public class MainActivity extends AppCompatActivity
         }
         Log.d(TAG, "FML is: " + friendly_msg_length);
     }
+    private void setupAR(){
+
+        arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.ux_fragment);
+
+        arFragment.getArSceneView().getPlaneRenderer().getMaterial().thenAccept(material ->
+                material.setFloat3(PlaneRenderer.MATERIAL_COLOR, new Color(0.0f,0.0f,1.0f, 1.0f)));
+
+        textViewToChange = findViewById(R.id.status);
+        arFragment.getArSceneView().enableDebug(false);
+        arFragment.getArSceneView().getScene().addOnUpdateListener(
+                (FrameTime frameTime) -> {
+                  //  System.out.println("in loop:" + arFragment.isAdded());
+                    if (arFragment.isAdded()) {
+                      //  System.out.println("activated");
+                        int color = getUpdatedTextColor(arFragment.getArSceneView().getArFrame());
+
+
+                        textViewToChange.setTextColor(android.graphics.Color.rgb(color,color,color));
+                        ArrayList<TextView> messages = new ArrayList<TextView>();
+                        TextView messageEditText = findViewById(R.id.messageEditText);
+                        RecyclerView recyclerView = findViewById(R.id.messageRecyclerView);
+                        for (int i = 0; i< recyclerView.getChildCount(); i ++){
+                            LinearLayout layout = (LinearLayout)recyclerView.getChildAt(i);
+                            LinearLayout layout2 = (LinearLayout)layout.getChildAt(0);
+
+                           LinearLayout layout3 = (LinearLayout) (layout2.getChildAt(1));
+                           TextView temp = (TextView) (layout3.getChildAt(0));
+
+                           temp.setTextColor(android.graphics.Color.rgb(color,color,color));
+
+                        }
+                        if (messageEditText!=null){
+                            messageEditText.setTextColor(android.graphics.Color.rgb(color,color,color));
+                        }
+
+                        Collection<Plane> planes = (arFragment.getArSceneView().getArFrame().getUpdatedTrackables(Plane.class));
+                        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                       // System.out.println("num of planes" + planes.size());
+                        if (planes.size() > 0) {
+                           // System.out.println("found planes");
+                            ArrayList<Plane> planesList = new ArrayList<Plane>();
+                            int index = 0;
+                            planes.forEach((temp)->{
+
+                                planesList.add(temp);
+
+                            });
+
+                            for (int i = 0; i < planes.size(); i ++){
+                                if(planesList.get(i).getType()==Plane.Type.VERTICAL){
+                                    System.out.println("found vertical plane");
+                                    textViewToChange.setText("STOP!");
+                                    break;
+                                }
+                                else{
+                                    System.out.println("found horizontal plane");
+                                    textViewToChange.setText("");
+                                }
+                            }
+
+                        }
+                        else{
+                            System.out.println("No planes");
+
+                            textViewToChange.setText("Go");
+                            // v.cancel();
+                        }
+
+                    }
+
+                }
+        );
+    }
+    public int getUpdatedTextColor(Frame frame){
+        double RANGE = 1.0;
+        double a = (255)/(Math.pow(RANGE,2));
+        double sqr = Math.pow(frame.getLightEstimate().getPixelIntensity()-RANGE,2);
+        int color =(int)(a*sqr);
+       return color;
+    }
+
+
 
 
 }
