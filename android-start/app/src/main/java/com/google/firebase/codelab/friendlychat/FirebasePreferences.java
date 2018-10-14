@@ -15,8 +15,8 @@
  */
 package com.google.firebase.codelab.friendlychat;
 
-public class CodelabPreferences {
+public class FirebasePreferences {
 
-    public static final String FRIENDLY_MSG_LENGTH = "friendly_msg_length";
+    public static final String MSG_LENGTH = "friendly_msg_length";
 
 }

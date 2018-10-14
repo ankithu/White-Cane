@@ -1,26 +1,15 @@
 /**
- * Copyright Google Inc. All Rights Reserved.
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *@Author: Ankih ,Puneet, Rohan
+ * modified from base code from google (chat)
  */
 package com.google.firebase.codelab.friendlychat;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -38,6 +27,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -50,10 +40,6 @@ import com.bumptech.glide.Glide;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.firebase.ui.database.SnapshotParser;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.appinvite.AppInvite;
-import com.google.android.gms.appinvite.AppInviteInvitation;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -67,7 +53,6 @@ import com.google.ar.sceneform.FrameTime;
 import com.google.ar.sceneform.rendering.Color;
 import com.google.ar.sceneform.rendering.PlaneRenderer;
 import com.google.ar.sceneform.ux.ArFragment;
-import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -86,8 +71,6 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -100,7 +83,7 @@ public class MainActivity extends AppCompatActivity
     // Firebase instance variables
     // Firebase instance variables
     private DatabaseReference mFirebaseDatabaseReference;
-    private FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>
+    private FirebaseRecyclerAdapter<WhiteCaneMessage, MessageViewHolder>
             mFirebaseAdapter;
     private ArFragment arFragment;
     private TextView textViewToChange;
@@ -149,6 +132,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         // Set default username is anonymous.
         mUsername = ANONYMOUS;
@@ -201,23 +185,23 @@ public class MainActivity extends AppCompatActivity
 
         // New child entries
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-        SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
+        SnapshotParser<WhiteCaneMessage> parser = new SnapshotParser<WhiteCaneMessage>() {
             @Override
-            public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
-                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-                if (friendlyMessage != null) {
-                    friendlyMessage.setId(dataSnapshot.getKey());
+            public WhiteCaneMessage parseSnapshot(DataSnapshot dataSnapshot) {
+                WhiteCaneMessage whiteCaneMessage = dataSnapshot.getValue(WhiteCaneMessage.class);
+                if (whiteCaneMessage != null) {
+                    whiteCaneMessage.setId(dataSnapshot.getKey());
                 }
-                return friendlyMessage;
+                return whiteCaneMessage;
             }
         };
 
         DatabaseReference messagesRef = mFirebaseDatabaseReference.child(MESSAGES_CHILD);
-        FirebaseRecyclerOptions<FriendlyMessage> options =
-                new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
+        FirebaseRecyclerOptions<WhiteCaneMessage> options =
+                new FirebaseRecyclerOptions.Builder<WhiteCaneMessage>()
                         .setQuery(messagesRef, parser)
                         .build();
-        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, MessageViewHolder>(options) {
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<WhiteCaneMessage, MessageViewHolder>(options) {
             @Override
             public MessageViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
                 LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
@@ -227,14 +211,14 @@ public class MainActivity extends AppCompatActivity
             @Override
             protected void onBindViewHolder(final MessageViewHolder viewHolder,
                                             int position,
-                                            FriendlyMessage friendlyMessage) {
+                                            WhiteCaneMessage whiteCaneMessage) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-                if (friendlyMessage.getText() != null) {
-                    viewHolder.messageTextView.setText(friendlyMessage.getText());
+                if (whiteCaneMessage.getText() != null) {
+                    viewHolder.messageTextView.setText(whiteCaneMessage.getText());
                     viewHolder.messageTextView.setVisibility(TextView.VISIBLE);
                     viewHolder.messageImageView.setVisibility(ImageView.GONE);
-                } else if (friendlyMessage.getImageUrl() != null) {
-                    String imageUrl = friendlyMessage.getImageUrl();
+                } else if (whiteCaneMessage.getImageUrl() != null) {
+                    String imageUrl = whiteCaneMessage.getImageUrl();
                     if (imageUrl.startsWith("gs://")) {
                         StorageReference storageReference = FirebaseStorage.getInstance()
                                 .getReferenceFromUrl(imageUrl);
@@ -255,7 +239,7 @@ public class MainActivity extends AppCompatActivity
                                 });
                     } else {
                         Glide.with(viewHolder.messageImageView.getContext())
-                                .load(friendlyMessage.getImageUrl())
+                                .load(whiteCaneMessage.getImageUrl())
                                 .into(viewHolder.messageImageView);
                     }
                     viewHolder.messageImageView.setVisibility(ImageView.VISIBLE);
@@ -263,28 +247,28 @@ public class MainActivity extends AppCompatActivity
                 }
 
 
-                viewHolder.messengerTextView.setText(friendlyMessage.getName());
-                if (friendlyMessage.getPhotoUrl() == null) {
+                viewHolder.messengerTextView.setText(whiteCaneMessage.getName());
+                if (whiteCaneMessage.getPhotoUrl() == null) {
                     viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(MainActivity.this,
                             R.drawable.ic_account_circle_black_36dp));
                 } else {
                     Glide.with(MainActivity.this)
-                            .load(friendlyMessage.getPhotoUrl())
+                            .load(whiteCaneMessage.getPhotoUrl())
                             .into(viewHolder.messengerImageView);
                 }
-                if (friendlyMessage.getText() != null) {
+                if (whiteCaneMessage.getText() != null) {
                     // write this message to the on-device index
                     FirebaseAppIndex.getInstance()
-                            .update(getMessageIndexable(friendlyMessage));
+                            .update(getMessageIndexable(whiteCaneMessage));
                 }
-                if (friendlyMessage.getText() != null) {
+                if (whiteCaneMessage.getText() != null) {
                     // write this message to the on-device index
                     FirebaseAppIndex.getInstance()
-                            .update(getMessageIndexable(friendlyMessage));
+                            .update(getMessageIndexable(whiteCaneMessage));
                 }
 
 // log a view action on it
-                FirebaseUserActions.getInstance().end(getMessageViewAction(friendlyMessage));
+                FirebaseUserActions.getInstance().end(getMessageViewAction(whiteCaneMessage));
             }
         };
 
@@ -311,7 +295,7 @@ public class MainActivity extends AppCompatActivity
 
         mMessageEditText = (EditText) findViewById(R.id.messageEditText);
         mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(mSharedPreferences
-                .getInt(CodelabPreferences.FRIENDLY_MSG_LENGTH, DEFAULT_MSG_LENGTH_LIMIT))});
+                .getInt(FirebasePreferences.MSG_LENGTH, DEFAULT_MSG_LENGTH_LIMIT))});
         mMessageEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -335,13 +319,13 @@ public class MainActivity extends AppCompatActivity
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                FriendlyMessage friendlyMessage = new
-                        FriendlyMessage(mMessageEditText.getText().toString(),
+                WhiteCaneMessage whiteCaneMessage = new
+                        WhiteCaneMessage(mMessageEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl,
                         null /* no image */);
                 mFirebaseDatabaseReference.child(MESSAGES_CHILD)
-                        .push().setValue(friendlyMessage);
+                        .push().setValue(whiteCaneMessage);
                 mMessageEditText.setText("");
             }
         });
@@ -423,7 +407,7 @@ public class MainActivity extends AppCompatActivity
                     final Uri uri = data.getData();
                     Log.d(TAG, "Uri: " + uri.toString());
 
-                    FriendlyMessage tempMessage = new FriendlyMessage(null, mUsername, mPhotoUrl,
+                    WhiteCaneMessage tempMessage = new WhiteCaneMessage(null, mUsername, mPhotoUrl,
                             LOADING_IMAGE_URL);
                     mFirebaseDatabaseReference.child(MESSAGES_CHILD).push()
                             .setValue(tempMessage, new DatabaseReference.CompletionListener() {
@@ -455,12 +439,12 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
                         if (task.isSuccessful()) {
-                            FriendlyMessage friendlyMessage =
-                                    new FriendlyMessage(null, mUsername, mPhotoUrl,
+                            WhiteCaneMessage whiteCaneMessage =
+                                    new WhiteCaneMessage(null, mUsername, mPhotoUrl,
                                             task.getResult().getMetadata().getDownloadUrl()
                                                     .toString());
                             mFirebaseDatabaseReference.child(MESSAGES_CHILD).child(key)
-                                    .setValue(friendlyMessage);
+                                    .setValue(whiteCaneMessage);
                         } else {
                             Log.w(TAG, "Image upload task was not successful.",
                                     task.getException());
@@ -468,28 +452,28 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
     }
-    private Indexable getMessageIndexable(FriendlyMessage friendlyMessage) {
+    private Indexable getMessageIndexable(WhiteCaneMessage whiteCaneMessage) {
         PersonBuilder sender = Indexables.personBuilder()
-                .setIsSelf(mUsername.equals(friendlyMessage.getName()))
-                .setName(friendlyMessage.getName())
-                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/sender"));
+                .setIsSelf(mUsername.equals(whiteCaneMessage.getName()))
+                .setName(whiteCaneMessage.getName())
+                .setUrl(MESSAGE_URL.concat(whiteCaneMessage.getId() + "/sender"));
 
         PersonBuilder recipient = Indexables.personBuilder()
                 .setName(mUsername)
-                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId() + "/recipient"));
+                .setUrl(MESSAGE_URL.concat(whiteCaneMessage.getId() + "/recipient"));
 
         Indexable messageToIndex = Indexables.messageBuilder()
-                .setName(friendlyMessage.getText())
-                .setUrl(MESSAGE_URL.concat(friendlyMessage.getId()))
+                .setName(whiteCaneMessage.getText())
+                .setUrl(MESSAGE_URL.concat(whiteCaneMessage.getId()))
                 .setSender(sender)
                 .setRecipient(recipient)
                 .build();
 
         return messageToIndex;
     }
-    private Action getMessageViewAction(FriendlyMessage friendlyMessage) {
+    private Action getMessageViewAction(WhiteCaneMessage whiteCaneMessage) {
         return new Action.Builder(Action.Builder.VIEW_ACTION)
-                .setObject(friendlyMessage.getName(), MESSAGE_URL.concat(friendlyMessage.getId()))
+                .setObject(whiteCaneMessage.getName(), MESSAGE_URL.concat(whiteCaneMessage.getId()))
                 .setMetadata(new Action.Metadata.Builder().setUpload(false))
                 .build();
     }
@@ -557,7 +541,7 @@ public class MainActivity extends AppCompatActivity
 
 
                         textViewToChange.setTextColor(android.graphics.Color.rgb(color,color,color));
-                        ArrayList<TextView> messages = new ArrayList<TextView>();
+
                         TextView messageEditText = findViewById(R.id.messageEditText);
                         RecyclerView recyclerView = findViewById(R.id.messageRecyclerView);
                         for (int i = 0; i< recyclerView.getChildCount(); i ++){
@@ -566,8 +550,9 @@ public class MainActivity extends AppCompatActivity
 
                            LinearLayout layout3 = (LinearLayout) (layout2.getChildAt(1));
                            TextView temp = (TextView) (layout3.getChildAt(0));
-
+                            TextView temp2 = (TextView) (layout3.getChildAt(2));
                            temp.setTextColor(android.graphics.Color.rgb(color,color,color));
+                            temp2.setTextColor(android.graphics.Color.rgb(color,color,color));
 
                         }
                         if (messageEditText!=null){
@@ -577,7 +562,9 @@ public class MainActivity extends AppCompatActivity
                         Collection<Plane> planes = (arFragment.getArSceneView().getArFrame().getUpdatedTrackables(Plane.class));
                         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
                        // System.out.println("num of planes" + planes.size());
-                        if (planes.size() > 0) {
+                        boolean verticalPlaneDetectedInPreviousLoop = false;
+                        int fireCount = 0;
+                        if (planes.size() > 0 || verticalPlaneDetectedInPreviousLoop) {
                            // System.out.println("found planes");
                             ArrayList<Plane> planesList = new ArrayList<Plane>();
                             int index = 0;
@@ -586,25 +573,35 @@ public class MainActivity extends AppCompatActivity
                                 planesList.add(temp);
 
                             });
+                            boolean verticalPlane = false;
 
                             for (int i = 0; i < planes.size(); i ++){
-                                if(planesList.get(i).getType()==Plane.Type.VERTICAL){
+                                if(planesList.get(i).getType()==Plane.Type.VERTICAL && fireCount < 10) {
+                                    fireCount++;
                                     System.out.println("found vertical plane");
                                     textViewToChange.setText("STOP!");
+                                    verticalPlane = true;
+                                    verticalPlaneDetectedInPreviousLoop = true;
+                                    v.vibrate(VibrationEffect.createOneShot(500,VibrationEffect.DEFAULT_AMPLITUDE));
                                     break;
                                 }
-                                else{
-                                    System.out.println("found horizontal plane");
-                                    textViewToChange.setText("");
-                                }
+                            }
+                            if(!verticalPlane){
+                                System.out.println("found horizontal plane");
+                                textViewToChange.setText("");
+                                verticalPlaneDetectedInPreviousLoop = false;
+                                verticalPlane = false;
+                            }
+                            else{
+                                planesList.clear();
                             }
 
                         }
                         else{
                             System.out.println("No planes");
 
-                            textViewToChange.setText("Go");
-                            // v.cancel();
+                            textViewToChange.setText("");
+                             v.cancel();
                         }
 
                     }
@@ -617,6 +614,15 @@ public class MainActivity extends AppCompatActivity
         double a = (255)/(Math.pow(RANGE,2));
         double sqr = Math.pow(frame.getLightEstimate().getPixelIntensity()-RANGE,2);
         int color =(int)(a*sqr);
+        if (color>(255/2)){
+            color = color * 2;
+        }
+        else {
+            color = color / 2;
+        }
+        if (color>255){
+            color=255;
+        }
        return color;
     }
 

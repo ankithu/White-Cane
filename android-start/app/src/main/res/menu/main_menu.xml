@@ -7,7 +7,7 @@
         app:showAsAction="never"/>
     <item
         android:id="@+id/fresh_config_menu"
-        android:title="@string/fresh_config"
+        android:title="White Cane"
         app:showAsAction="never"/>
     <item
         android:id="@+id/invite_menu"
