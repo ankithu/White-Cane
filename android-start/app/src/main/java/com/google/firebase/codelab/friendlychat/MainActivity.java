@@ -516,8 +516,10 @@ public class MainActivity extends AppCompatActivity
     private void applyRetrievedLengthLimit() {
         Long friendly_msg_length =
                 mFirebaseRemoteConfig.getLong("friendly_msg_length");
-        mMessageEditText.setFilters(new InputFilter[]{new
-                InputFilter.LengthFilter(friendly_msg_length.intValue())});
+        if (mMessageEditText != null) {
+            mMessageEditText.setFilters(new InputFilter[]{new
+                    InputFilter.LengthFilter(friendly_msg_length.intValue())});
+        }
         Log.d(TAG, "FML is: " + friendly_msg_length);
     }
 
